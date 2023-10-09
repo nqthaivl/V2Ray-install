@@ -665,37 +665,19 @@ acme_cron_update() {
     judge "cron 计划任务更新"
 }
 
-vmess_qr_config_tls_ws1() {
+vmess_qr_config_tls_ws() {
     cat >$v2ray_qr_config_file <<-EOF
 {
   "v": "2",
-  "ps": "1touchprolq_${domain}",
+  "ps": "wulabing_${domain}",
   "add": "${domain}",
   "port": "${port}",
   "id": "${UUID}",
   "aid": "${alterID}",
   "net": "ws",
   "type": "none",
-  "host": "${domain}",
   "sni": "dl.kgvn.garenanow.com",
-  "path": "${camouflage}",
-  "tls": "tls"
-}
-EOF
-}
-vmess_qr_config_tls_ws2() {
-    cat >$v2ray_qr_config_file <<-EOF
-{
-  "v": "2",
-  "ps": "1touchprotk_${domain}",
-  "add": "${domain}",
-  "port": "${port}",
-  "id": "${UUID}",
-  "aid": "${alterID}",
-  "net": "ws",
-  "type": "none",
   "host": "${domain}",
-  "sni": "v9-vn.tiktokcdn.com",
   "path": "${camouflage}",
   "tls": "tls"
 }
@@ -706,7 +688,7 @@ vmess_qr_config_h2() {
     cat >$v2ray_qr_config_file <<-EOF
 {
   "v": "2",
-  "ps": "1touchpro_${domain}",
+  "ps": "wulabing_${domain}",
   "add": "${domain}",
   "port": "${port}",
   "id": "${UUID}",
@@ -714,23 +696,6 @@ vmess_qr_config_h2() {
   "net": "h2",
   "type": "none",
   "sni": "dl.kgvn.garenanow.com",
-  "path": "${camouflage}",
-  "tls": "tls"
-}
-EOF
-}
-vmess_qr_config_h3() {
-    cat >$v2ray_qr_config_file <<-EOF
-{
-  "v": "2",
-  "ps": "1touchpro_${domain}",
-  "add": "${domain}",
-  "port": "${port}",
-  "id": "${UUID}",
-  "aid": "${alterID}",
-  "net": "h2",
-  "type": "none",
-  "sni": "v9-vn.tiktokcdn.com",
   "path": "${camouflage}",
   "tls": "tls"
 }
@@ -962,8 +927,7 @@ install_v2ray_ws_tls() {
     web_camouflage
     ssl_judge_and_install
     nginx_systemd
-    vmess_qr_config_tls_ws1
-    vmess_qr_config_tls_ws2
+    vmess_qr_config_tls_ws
     basic_information
     vmess_link_image_choice
     tls_type
@@ -987,7 +951,6 @@ install_v2_h2() {
     v2ray_conf_add_h2
     ssl_judge_and_install
     vmess_qr_config_h2
-    vmess_qr_config_h3
     basic_information
     vmess_qr_link_image
     show_information
