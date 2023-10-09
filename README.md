@@ -75,14 +75,13 @@ Tập lệnh hỗ trợ tạo tự động các chứng chỉ được mã hóa,
 
 
 ### Phương thức khởi động
+ Chạy V2ray：`systemctl start v2ray`
 
-Bắt đầu V2ray: `systemctl bắt đầu v2ray`
+Tắt V2ray：`systemctl stop v2ray`
 
-Dừng V2ray: `systemctl dừng v2ray`
+Chạy Nginx：`systemctl start nginx`
 
-Bắt đầu Nginx: `systemctl bắt đầu nginx`
-
-Dừng Nginx: `systemctl dừng nginx`
+Tắt Nginx：`systemctl stop nginx`
 
 ### Thư mục liên quan
 
