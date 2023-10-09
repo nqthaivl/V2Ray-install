@@ -59,26 +59,32 @@ jemalloc_version="5.2.1"
 old_config_status="off"
 # v2ray_plugin_version="$(wget -qO- "https://github.com/shadowsocks/v2ray-plugin/tags" | grep -E "/shadowsocks/v2ray-plugin/releases/tag/" | head -1 | sed -r 's/.*tag\/v(.+)\">.*/\1/')"
 
+#移动旧版本配置信息 对小于 1.1.0 版本适配
 [[ -f "/etc/v2ray/vmess_qr.json" ]] && mv /etc/v2ray/vmess_qr.json $v2ray_qr_config_file
-random_num=$((RANDOM%12+4))
 
+#简易随机数
+random_num=$((RANDOM%12+4))
+#生成伪装路径
 camouflage="/$(head -n 10 /dev/urandom | md5sum | head -c ${random_num})/"
 
 THREAD=$(grep 'processor' /proc/cpuinfo | sort -u | wc -l)
 
 source '/etc/os-release'
+
+#从VERSION中提取发行版系统的英文名称，为了在debian/ubuntu下添加相对应的Nginx apt源
 VERSION=$(echo "${VERSION}" | awk -F "[()]" '{print $2}')
 
 check_system() {
     if [[ "${ID}" == "centos" && ${VERSION_ID} -ge 7 ]]; then
-        echo -e "${OK} ${GreenBG} Hệ thống hiện tại là Centos ${VERSION_ID} ${VERSION} ${Font}"
+        echo -e "${OK} ${GreenBG} 当前系统为 Centos ${VERSION_ID} ${VERSION} ${Font}"
         INS="yum"
     elif [[ "${ID}" == "debian" && ${VERSION_ID} -ge 8 ]]; then
-        echo -e "${OK} ${GreenBG} Hệ thống hiện tại là Debian ${VERSION_ID} ${VERSION} ${Font}"
+        echo -e "${OK} ${GreenBG} 当前系统为 Debian ${VERSION_ID} ${VERSION} ${Font}"
         INS="apt"
         $INS update
+        ## 添加 Nginx apt源
     elif [[ "${ID}" == "ubuntu" && $(echo "${VERSION_ID}" | cut -d '.' -f1) -ge 16 ]]; then
-        echo -e "${OK} ${GreenBG} Hệ thống hiện tại là Ubuntu ${VERSION_ID} ${UBUNTU_CODENAME} ${Font}"
+        echo -e "${OK} ${GreenBG} 当前系统为 Ubuntu ${VERSION_ID} ${UBUNTU_CODENAME} ${Font}"
         INS="apt"
         rm /var/lib/dpkg/lock
         dpkg --configure -a
@@ -86,7 +92,7 @@ check_system() {
         rm /var/cache/apt/archives/lock
         $INS update
     else
-        echo -e "${Error} ${RedBG} Hệ thống hiện tại là ${ID} ${VERSION_ID} Không có trong danh sách hệ thống được hỗ trợ, Cài đặt lỗi ${Font}"
+        echo -e "${Error} ${RedBG} 当前系统为 ${ID} ${VERSION_ID} 不在支持的系统列表内，安装中断 ${Font}"
         exit 1
     fi
 
@@ -94,36 +100,36 @@ check_system() {
 
     systemctl stop firewalld
     systemctl disable firewalld
-    echo -e "${OK} ${GreenBG} firewalld đóng cửa ${Font}"
+    echo -e "${OK} ${GreenBG} firewalld 已关闭 ${Font}"
 
     systemctl stop ufw
     systemctl disable ufw
-    echo -e "${OK} ${GreenBG} ufw đóng cửa ${Font}"
+    echo -e "${OK} ${GreenBG} ufw 已关闭 ${Font}"
 }
 
 is_root() {
     if [ 0 == $UID ]; then
-        echo -e "${OK} ${GreenBG} Người dùng hiện tại là người dùng root và tham gia quá trình Cài đặt. ${Font}"
+        echo -e "${OK} ${GreenBG} 当前用户是root用户，进入安装流程 ${Font}"
         sleep 3
     else
-        echo -e "${Error} ${RedBG} Người dùng hiện tại không phải là người dùng root. Vui lòng chuyển sang người dùng root và chạy lại cài đặt ${Font}"
+        echo -e "${Error} ${RedBG} 当前用户不是root用户，请切换到root用户后重新执行脚本 ${Font}"
         exit 1
     fi
 }
 
 judge() {
     if [[ 0 -eq $? ]]; then
-        echo -e "${OK} ${GreenBG} $1 Hoàn thành ${Font}"
+        echo -e "${OK} ${GreenBG} $1 完成 ${Font}"
         sleep 1
     else
-        echo -e "${Error} ${RedBG} $1 Lỗi cài đặt${Font}"
+        echo -e "${Error} ${RedBG} $1 失败${Font}"
         exit 1
     fi
 }
 
 chrony_install() {
     ${INS} -y install chrony
-    judge "Cài đặt chrony dịch vụ đồng bộ thời gian "
+    judge "安装 chrony 时间同步服务 "
 
     timedatectl set-ntp true
 
@@ -137,21 +143,21 @@ chrony_install() {
 
     timedatectl set-timezone Asia/Shanghai
 
-    echo -e "${OK} ${GreenBG} Chờ đồng bộ hóa thời gian ${Font}"
+    echo -e "${OK} ${GreenBG} 等待时间同步 ${Font}"
     sleep 10
 
     chronyc sourcestats -v
     chronyc tracking -v
     date
-    read -rp "Vui lòng xác nhận xem thời gian có chính xác không, phạm vi lỗi là ± 3 phút (Y/N): " chrony_install
+    read -rp "请确认时间是否准确,误差范围±3分钟(Y/N): " chrony_install
     [[ -z ${chrony_install} ]] && chrony_install="Y"
     case $chrony_install in
     [yY][eE][sS] | [yY])
-        echo -e "${GreenBG} Tiếp tục cài đặt ${Font}"
+        echo -e "${GreenBG} 继续安装 ${Font}"
         sleep 2
         ;;
     *)
-        echo -e "${RedBG} Cài đặt chấm dứt ${Font}"
+        echo -e "${RedBG} 安装终止 ${Font}"
         exit 2
         ;;
     esac
@@ -165,7 +171,7 @@ dependency_install() {
     else
         ${INS} -y install cron
     fi
-    judge "Cài đặt crontab"
+    judge "安装 crontab"
 
     if [[ "${ID}" == "centos" ]]; then
         touch /var/spool/cron/root && chmod 600 /var/spool/cron/root
@@ -175,26 +181,26 @@ dependency_install() {
         systemctl start cron && systemctl enable cron
 
     fi
-    judge "crontab Cấu hình tự động khởi động "
+    judge "crontab 自启动配置 "
 
     ${INS} -y install bc
-    judge "Cài đặt bc"
+    judge "安装 bc"
 
     ${INS} -y install unzip
-    judge "Cài đặt unzip"
+    judge "安装 unzip"
 
     ${INS} -y install qrencode
-    judge "Cài đặt qrencode"
+    judge "安装 qrencode"
 
     ${INS} -y install curl
-    judge "Cài đặt curl"
+    judge "安装 curl"
 
     if [[ "${ID}" == "centos" ]]; then
         ${INS} -y groupinstall "Development tools"
     else
         ${INS} -y install build-essential
     fi
-    judge "Cài đặt bộ công cụ cần thiết"
+    judge "编译工具包 安装"
 
     if [[ "${ID}" == "centos" ]]; then
         ${INS} -y install pcre pcre-devel zlib-devel epel-release
@@ -203,15 +209,16 @@ dependency_install() {
     fi
 
     #    ${INS} -y install rng-tools
-    #    judge "rng-tools Cài đặt"
+    #    judge "rng-tools 安装"
 
     ${INS} -y install haveged
-    #    judge "haveged Cài đặt"
+    #    judge "haveged 安装"
 
     #    sed -i -r '/^HRNGDEVICE/d;/#HRNGDEVICE=\/dev\/null/a HRNGDEVICE=/dev/urandom' /etc/default/rng-tools
 
     if [[ "${ID}" == "centos" ]]; then
-
+        #       systemctl start rngd && systemctl enable rngd
+        #       judge "rng-tools 启动"
         systemctl start haveged && systemctl enable haveged
         #       judge "haveged 启动"
     else
@@ -241,9 +248,9 @@ basic_optimization() {
 
 port_alterid_set() {
     if [[ "on" != "$old_config_status" ]]; then
-        read -rp "Vui lòng nhập cổng kết nối（default:443）:" port
+        read -rp "请输入连接端口（default:443）:" port
         [[ -z ${port} ]] && port="443"
-        alterID="64"
+        alterID="0"
     fi
 }
 
@@ -252,7 +259,7 @@ modify_path() {
         camouflage="$(grep '\"path\"' $v2ray_qr_config_file | awk -F '"' '{print $4}')"
     fi
     sed -i "/\"path\"/c \\\t  \"path\":\"${camouflage}\"" ${v2ray_conf}
-    judge "V2ray Sửa đổi đường dẫn ngụy trang"
+    judge "V2ray 伪装路径 修改"
 }
 
 modify_inbound_port() {
@@ -265,7 +272,7 @@ modify_inbound_port() {
     else
         sed -i "/\"port\"/c  \    \"port\":${port}," ${v2ray_conf}
     fi
-    judge "V2ray inbound_port kiểm tra"
+    judge "V2ray inbound_port 修改"
 }
 
 modify_UUID() {
@@ -274,7 +281,7 @@ modify_UUID() {
         UUID="$(info_extraction '\"id\"')"
     fi
     sed -i "/\"id\"/c \\\t  \"id\":\"${UUID}\"," ${v2ray_conf}
-    judge "V2ray UUID kiểm tra"
+    judge "V2ray UUID 修改"
     [ -f ${v2ray_qr_config_file} ] && sed -i "/\"id\"/c \\  \"id\": \"${UUID}\"," ${v2ray_qr_config_file}
     echo -e "${OK} ${GreenBG} UUID:${UUID} ${Font}"
 }
@@ -285,9 +292,9 @@ modify_nginx_port() {
     fi
     sed -i "/ssl http2;$/c \\\tlisten ${port} ssl http2;" ${nginx_conf}
     sed -i "3c \\\tlisten [::]:${port} http2;" ${nginx_conf}
-    judge "V2ray port"
+    judge "V2ray port 修改"
     [ -f ${v2ray_qr_config_file} ] && sed -i "/\"port\"/c \\  \"port\": \"${port}\"," ${v2ray_qr_config_file}
-    echo -e "${OK} ${GreenBG} Số cổng:${port} ${Font}"
+    echo -e "${OK} ${GreenBG} 端口号:${port} ${Font}"
 }
 
 modify_nginx_other() {
@@ -299,12 +306,12 @@ modify_nginx_other() {
 }
 
 web_camouflage() {
-    ##请注意 这里和LNMP脚本的默认路径冲突，千万不要在Cài đặt了LNMP的环境下使用本脚本，否则后果自负
+    ##请注意 这里和LNMP脚本的默认路径冲突，千万不要在安装了LNMP的环境下使用本脚本，否则后果自负
     rm -rf /home/wwwroot
     mkdir -p /home/wwwroot
     cd /home/wwwroot || exit
     git clone https://github.com/wulabing/3DCEList.git
-    judge "Trang web nguỵ trang"
+    judge "web 站点伪装"
 }
 
 v2ray_install() {
@@ -322,9 +329,9 @@ v2ray_install() {
         rm -rf $v2ray_systemd_file
         systemctl daemon-reload
         bash v2ray.sh --force
-        judge "Cài đặt V2ray"
+        judge "安装 V2ray"
     else
-        echo -e "${Error} ${RedBG} Tải xuống tệp cài đặt V2ray không thành công, vui lòng kiểm tra xem địa chỉ tải xuống có sẵn không ${Font}"
+        echo -e "${Error} ${RedBG} V2ray 安装文件下载失败，请检查下载地址是否可用 ${Font}"
         exit 4
     fi
     # 清除临时文件
@@ -333,10 +340,10 @@ v2ray_install() {
 
 nginx_exist_check() {
     if [[ -f "/etc/nginx/sbin/nginx" ]]; then
-        echo -e "${OK} ${GreenBG} Nginx đã tồn tại, bỏ qua quá trình cài đặt ${Font}"
+        echo -e "${OK} ${GreenBG} Nginx已存在，跳过编译安装过程 ${Font}"
         sleep 2
     elif [[ -d "/usr/local/nginx/" ]]; then
-        echo -e "${OK} ${GreenBG} Các gói cài đặt Nginx đã có trên máy vui lòng thực hiên sau khi cài đặt${Font}"
+        echo -e "${OK} ${GreenBG} 检测到其他套件安装的Nginx，继续安装会造成冲突，请处理后安装${Font}"
         exit 1
     else
         nginx_install
@@ -349,11 +356,11 @@ nginx_install() {
     #    fi
 
     wget -nc --no-check-certificate http://nginx.org/download/nginx-${nginx_version}.tar.gz -P ${nginx_openssl_src}
-    judge "Nginx đang được tải xuống"
+    judge "Nginx 下载"
     wget -nc --no-check-certificate https://www.openssl.org/source/openssl-${openssl_version}.tar.gz -P ${nginx_openssl_src}
-    judge "openssl đang được tải xuống"
+    judge "openssl 下载"
     wget -nc --no-check-certificate https://github.com/jemalloc/jemalloc/releases/download/${jemalloc_version}/jemalloc-${jemalloc_version}.tar.bz2 -P ${nginx_openssl_src}
-    judge "jemalloc đang được tải xuống"
+    judge "jemalloc 下载"
 
     cd ${nginx_openssl_src} || exit
 
@@ -368,18 +375,18 @@ nginx_install() {
 
     [[ -d "$nginx_dir" ]] && rm -rf ${nginx_dir}
 
-    echo -e "${OK} ${GreenBG} Quá trình biên dịch Cài đặt jemalloc sẽ sớm bắt đầu ${Font}"
+    echo -e "${OK} ${GreenBG} 即将开始编译安装 jemalloc ${Font}"
     sleep 2
 
     cd jemalloc-${jemalloc_version} || exit
     ./configure
-    judge "Kiểm tra"
+    judge "编译检查"
     make -j "${THREAD}" && make install
-    judge "jemalloc Chuẩn bị Cài đặt"
+    judge "jemalloc 编译安装"
     echo '/usr/local/lib' >/etc/ld.so.conf.d/local.conf
     ldconfig
 
-    echo -e "${OK} ${GreenBG} Quá trình cài đặt Nginx, sắp bắt đầu vui lòng đợi ${Font}"
+    echo -e "${OK} ${GreenBG} 即将开始编译安装 Nginx, 过程稍久，请耐心等待 ${Font}"
     sleep 4
 
     cd ../nginx-${nginx_version} || exit
@@ -398,9 +405,9 @@ nginx_install() {
         --with-cc-opt='-O3' \
         --with-ld-opt="-ljemalloc" \
         --with-openssl=../openssl-"$openssl_version"
-    judge "Kiểm tra cấu hình"
+    judge "编译检查"
     make -j "${THREAD}" && make install
-    judge "Cài đặt Nginx"
+    judge "Nginx 编译安装"
 
     # 修改基本配置
     sed -i 's/#user  nobody;/user  root;/' ${nginx_dir}/conf/nginx.conf
@@ -424,49 +431,49 @@ ssl_install() {
     else
         ${INS} install socat netcat -y
     fi
-    judge "Cài đặt SSL"
+    judge "安装 SSL 证书生成脚本依赖"
 
     curl https://get.acme.sh | sh
-    judge "Cài đặt SSL"
+    judge "安装 SSL 证书生成脚本"
 }
 
 domain_check() {
-    read -rp "Vui lòng nhập tên miền của bạn(ví dụ: 1touch.pro):" domain
+    read -rp "请输入你的域名信息(eg:www.wulabing.com):" domain
     domain_ip=$(curl -sm8 https://ipget.net/?ip="${domain}")
-    echo -e "${OK} ${GreenBG} Đang lấy thông tin IP public, hãy kiên nhẫn chờ đợi ${Font}"
+    echo -e "${OK} ${GreenBG} 正在获取 公网ip 信息，请耐心等待 ${Font}"
     wgcfv4_status=$(curl -s4m8 https://www.cloudflare.com/cdn-cgi/trace -k | grep warp | cut -d= -f2)
     wgcfv6_status=$(curl -s6m8 https://www.cloudflare.com/cdn-cgi/trace -k | grep warp | cut -d= -f2)
     if [[ ${wgcfv4_status} =~ "on"|"plus" ]] || [[ ${wgcfv6_status} =~ "on"|"plus" ]]; then
         # 关闭wgcf-warp，以防误判VPS IP情况
         wg-quick down wgcf >/dev/null 2>&1
-        echo -e "${OK} ${GreenBG} đang tắt wgcf-warp ${Font}"
+        echo -e "${OK} ${GreenBG} 已关闭 wgcf-warp ${Font}"
     fi
     local_ipv4=$(curl -s4m8 http://ip.sb)
     local_ipv6=$(curl -s6m8 http://ip.sb)
     if [[ -z ${local_ipv4} && -n ${local_ipv6} ]]; then
         echo -e nameserver 2a01:4f8:c2c:123f::1 > /etc/resolv.conf
-        echo -e "${OK} ${GreenBG} VPS được xác định là Chỉ IPv6 đã bị tắt và máy chủ DNS64 đã được thêm tự động. ${Font}"
+        echo -e "${OK} ${GreenBG} 识别为 IPv6 Only 的 VPS，自动添加 DNS64 服务器 ${Font}"
     fi
-    echo -e "Tên miền được phân giải bằng DNS IP：${domain_ip}"
-    echo -e "Địa chỉ IPv4: ${local_ipv4}"
-    echo -e "Địa chỉ IPv6: ${local_ipv6}"
+    echo -e "域名 DNS 解析到的的 IP：${domain_ip}"
+    echo -e "本机IPv4: ${local_ipv4}"
+    echo -e "本机IPv6: ${local_ipv6}"
     sleep 2
     if [[ ${domain_ip} == ${local_ipv4} ]]; then
-        echo -e "${OK} ${GreenBG} Tên miền IP độ phân giải DNS khớp với IPv4 gốc ${Font}"
+        echo -e "${OK} ${GreenBG} 域名 DNS 解析 IP 与 本机 IPv4 匹配 ${Font}"
         sleep 2
     elif [[ ${domain_ip} == ${local_ipv6} ]]; then
-        echo -e "${OK} ${GreenBG} Tên miền Độ phân giải DNS IP khớp với IPv6 gốc ${Font}"
+        echo -e "${OK} ${GreenBG} 域名 DNS 解析 IP 与 本机 IPv6 匹配 ${Font}"
         sleep 2
     else
-        echo -e "${Error} ${RedBG} Vui lòng đảm bảo tên miền đã thêm bản ghi A/AAAA chính xác, nếu không nó sẽ không hoạt động V2ray ${Font}"
-        echo -e "${Error} ${RedBG} Tên miền IP độ phân giải DNS không khớp với IPv4/IPv6 cục bộ. Bạn có muốn tiếp tục cài đặt không?（y/n）${Font}" && read -r install
+        echo -e "${Error} ${RedBG} 请确保域名添加了正确的 A / AAAA 记录，否则将无法正常使用 V2ray ${Font}"
+        echo -e "${Error} ${RedBG} 域名 DNS 解析 IP 与 本机 IPv4 / IPv6 不匹配 是否继续安装？（y/n）${Font}" && read -r install
         case $install in
         [yY][eE][sS] | [yY])
-            echo -e "${GreenBG} Tiếp tục cài đặt ${Font}"
+            echo -e "${GreenBG} 继续安装 ${Font}"
             sleep 2
             ;;
         *)
-            echo -e "${RedBG} Đã kết thúc cài đặt ${Font}"
+            echo -e "${RedBG} 安装终止 ${Font}"
             exit 2
             ;;
         esac
@@ -475,15 +482,15 @@ domain_check() {
 
 port_exist_check() {
     if [[ 0 -eq $(lsof -i:"$1" | grep -i -c "listen") ]]; then
-        echo -e "${OK} ${GreenBG} $1 Port không bị chiếm ${Font}"
+        echo -e "${OK} ${GreenBG} $1 端口未被占用 ${Font}"
         sleep 1
     else
-        echo -e "${Error} ${RedBG} Phát hiện port $1 đã bị sử dụng，thông tin port $1 bị chiếm ${Font}"
+        echo -e "${Error} ${RedBG} 检测到 $1 端口被占用，以下为 $1 端口占用信息 ${Font}"
         lsof -i:"$1"
-        echo -e "${OK} ${GreenBG} Sẽ cố gắng tự động hủy quá trình chiếm giữ sau 5s ${Font}"
+        echo -e "${OK} ${GreenBG} 5s 后将尝试自动 kill 占用进程 ${Font}"
         sleep 5
         lsof -i:"$1" | awk '{print $2}' | grep -v "PID" | xargs kill -9
-        echo -e "${OK} ${GreenBG} kill thành công ${Font}"
+        echo -e "${OK} ${GreenBG} kill 完成 ${Font}"
         sleep 1
     fi
 }
@@ -491,23 +498,23 @@ acme() {
     "$HOME"/.acme.sh/acme.sh --set-default-ca --server letsencrypt
 
     if "$HOME"/.acme.sh/acme.sh --issue --insecure -d "${domain}" --standalone -k ec-256 --force; then
-        echo -e "${OK} ${GreenBG} Chứng chỉ SSL được tạo thành công ${Font}"
+        echo -e "${OK} ${GreenBG} SSL 证书生成成功 ${Font}"
         sleep 2
         mkdir /data
         if "$HOME"/.acme.sh/acme.sh --installcert -d "${domain}" --fullchainpath /data/v2ray.crt --keypath /data/v2ray.key --ecc --force; then
-            echo -e "${OK} ${GreenBG} Cấu hình chứng chỉ thành công ${Font}"
+            echo -e "${OK} ${GreenBG} 证书配置成功 ${Font}"
             sleep 2
             if [[ -n $(type -P wgcf) && -n $(type -P wg-quick) ]]; then
                 wg-quick up wgcf >/dev/null 2>&1
-                echo -e "${OK} ${GreenBG} Đã bắt đầu wgcf-warp ${Font}"
+                echo -e "${OK} ${GreenBG} 已启动 wgcf-warp ${Font}"
             fi
         fi
     else
-        echo -e "${Error} ${RedBG} SSL Tạo chứng chỉ không thành công ${Font}"
+        echo -e "${Error} ${RedBG} SSL 证书生成失败 ${Font}"
         rm -rf "$HOME/.acme.sh/${domain}_ecc"
         if [[ -n $(type -P wgcf) && -n $(type -P wg-quick) ]]; then
             wg-quick up wgcf >/dev/null 2>&1
-            echo -e "${OK} ${GreenBG} Đã bắt đầu wgcf-warp ${Font}"
+            echo -e "${OK} ${GreenBG} 已启动 wgcf-warp ${Font}"
         fi
         exit 1
     fi
@@ -531,17 +538,17 @@ v2ray_conf_add_h2() {
 
 old_config_exist_check() {
     if [[ -f $v2ray_qr_config_file ]]; then
-        echo -e "${OK} ${GreenBG} Đã phát hiện thấy tệp cấu hình cũ, có đọc cấu hình tệp cũ không [Y/N]? ${Font}"
+        echo -e "${OK} ${GreenBG} 检测到旧配置文件，是否读取旧文件配置 [Y/N]? ${Font}"
         read -r ssl_delete
         case $ssl_delete in
         [yY][eE][sS] | [yY])
-            echo -e "${OK} ${GreenBG} Cấu hình cũ được giữ nguyên ${Font}"
+            echo -e "${OK} ${GreenBG} 已保留旧配置  ${Font}"
             old_config_status="on"
             port=$(info_extraction '\"port\"')
             ;;
         *)
             rm -rf $v2ray_qr_config_file
-            echo -e "${OK} ${GreenBG} Đã xóa cấu hình cũ ${Font}"
+            echo -e "${OK} ${GreenBG} 已删除旧配置  ${Font}"
             ;;
         esac
     fi
@@ -594,7 +601,7 @@ EOF
 
     modify_nginx_port
     modify_nginx_other
-    judge " Sửa đổi cấu hình Nginx"
+    judge "Nginx 配置修改"
 
 }
 
@@ -603,18 +610,18 @@ start_process_systemd() {
     chown -R root.root /var/log/v2ray/
     if [[ "$shell_mode" != "h2" ]]; then
         systemctl restart nginx
-        judge "Bắt đầu Nginx"
+        judge "Nginx 启动"
     fi
     systemctl restart v2ray
-    judge "Bắt đầu V2ray"
+    judge "V2ray 启动"
 }
 
 enable_process_systemd() {
     systemctl enable v2ray
-    judge "Đặt V2ray tự động chạy khi khởi động"
+    judge "设置 v2ray 开机自启"
     if [[ "$shell_mode" != "h2" ]]; then
         systemctl enable nginx
-        judge "Đătk Nginx tự động chạy khi khởi động"
+        judge "设置 Nginx 开机自启"
     fi
 
 }
@@ -655,7 +662,7 @@ acme_cron_update() {
           sed -i "/acme.sh/c 0 3 * * 0 bash ${ssl_update_file}" /var/spool/cron/crontabs/root
       fi
     fi
-    judge "Cập nhật lên lịch Cron Tab"
+    judge "cron 计划任务更新"
 }
 
 vmess_qr_config_tls_ws1() {
@@ -670,7 +677,7 @@ vmess_qr_config_tls_ws1() {
   "net": "ws",
   "type": "none",
   "host": "${domain}",
-"sni": "dl.kgvn.garenanow.com",
+  "sni": "dl.kgvn.garenanow.com",
   "path": "${camouflage}",
   "tls": "tls"
 }
@@ -688,12 +695,13 @@ vmess_qr_config_tls_ws2() {
   "net": "ws",
   "type": "none",
   "host": "${domain}",
-"sni": "v9-vn.tiktokcdn.com",
+  "sni": "v9-vn.tiktokcdn.com",
   "path": "${camouflage}",
   "tls": "tls"
 }
 EOF
 }
+
 vmess_qr_config_h2() {
     cat >$v2ray_qr_config_file <<-EOF
 {
@@ -732,9 +740,9 @@ EOF
 vmess_qr_link_image() {
     vmess_link="vmess://$(base64 -w 0 $v2ray_qr_config_file)"
     {
-        echo -e "$Red Mã QR: $Font"
+        echo -e "$Red 二维码: $Font"
         echo -n "${vmess_link}" | qrencode -o - -t utf8
-        echo -e "${Red} URL liên kết:${vmess_link} ${Font}"
+        echo -e "${Red} URL导入链接:${vmess_link} ${Font}"
     } >>"${v2ray_info_file}"
 }
 
@@ -744,17 +752,17 @@ vmess_quan_link_image() {
     certificate=1, obfs=ws, obfs-path="\"$(info_extraction '\"path\"')\"", " > /tmp/vmess_quan.tmp
     vmess_link="vmess://$(base64 -w 0 /tmp/vmess_quan.tmp)"
     {
-        echo -e "$Red Mã QR: $Font"
+        echo -e "$Red 二维码: $Font"
         echo -n "${vmess_link}" | qrencode -o - -t utf8
-        echo -e "${Red} URL liên kết:${vmess_link} ${Font}"
+        echo -e "${Red} URL导入链接:${vmess_link} ${Font}"
     } >>"${v2ray_info_file}"
 }
 
 vmess_link_image_choice() {
-        echo "Vui lòng chọn loại liên kết được tạo"
+        echo "请选择生成的链接种类"
         echo "1: V2RayNG/V2RayN"
         echo "2: quantumult"
-        read -rp "Vui lòng nhập：" link_version
+        read -rp "请输入：" link_version
         [[ -z ${link_version} ]] && link_version=1
         if [[ $link_version == 1 ]]; then
             vmess_qr_link_image
@@ -771,17 +779,17 @@ info_extraction() {
 
 basic_information() {
     {
-        echo -e "${OK} ${GreenBG} Cài đặt thành công V2ray+ws+tls"
-        echo -e "${Red} Thông tin cấu hình V2ray ${Font}"
-        echo -e "${Red} Địa chỉ（address）:${Font} $(info_extraction '\"add\"') "
-        echo -e "${Red} Cổng（port）：${Font} $(info_extraction '\"port\"') "
-        echo -e "${Red} UUID ：${Font} $(info_extraction '\"id\"')"
-        echo -e "${Red} AalterId：${Font} $(info_extraction '\"aid\"')"
-        echo -e "${Red} Mã hoá（security）：${Font} 自适应 "
-        echo -e "${Red} Giao thức（network）：${Font} $(info_extraction '\"net\"') "
-        echo -e "${Red} Kiểu（type）：${Font} none "
-        echo -e "${Red} Path ：${Font} $(info_extraction '\"path\"') "
-        echo -e "${Red} Loại truyền dẫn ：${Font} tls "
+        echo -e "${OK} ${GreenBG} V2ray+ws+tls 安装成功"
+        echo -e "${Red} V2ray 配置信息 ${Font}"
+        echo -e "${Red} 地址（address）:${Font} $(info_extraction '\"add\"') "
+        echo -e "${Red} 端口（port）：${Font} $(info_extraction '\"port\"') "
+        echo -e "${Red} 用户id（UUID）：${Font} $(info_extraction '\"id\"')"
+        echo -e "${Red} 额外id（alterId）：${Font} $(info_extraction '\"aid\"')"
+        echo -e "${Red} 加密方式（security）：${Font} 自适应 "
+        echo -e "${Red} 传输协议（network）：${Font} $(info_extraction '\"net\"') "
+        echo -e "${Red} 伪装类型（type）：${Font} none "
+        echo -e "${Red} 路径（不要落下/）：${Font} $(info_extraction '\"path\"') "
+        echo -e "${Red} 底层传输安全：${Font} tls "
     } >"${v2ray_info_file}"
 }
 
@@ -791,13 +799,13 @@ show_information() {
 
 ssl_judge_and_install() {
     if [[ -f "/data/v2ray.key" || -f "/data/v2ray.crt" ]]; then
-        echo "/data Tệp chứng chỉ đã tồn tại trong thư mục"
-        echo -e "${OK} ${GreenBG} Xóa hay không [Y/N]? ${Font}"
+        echo "/data 目录下证书文件已存在"
+        echo -e "${OK} ${GreenBG} 是否删除 [Y/N]? ${Font}"
         read -r ssl_delete
         case $ssl_delete in
         [yY][eE][sS] | [yY])
             rm -rf /data/v2ray.crt /data/v2ray.key
-            echo -e "${OK} ${GreenBG} Đã xóa ${Font}"
+            echo -e "${OK} ${GreenBG} 已删除 ${Font}"
             ;;
         *) ;;
 
@@ -805,11 +813,11 @@ ssl_judge_and_install() {
     fi
 
     if [[ -f "/data/v2ray.key" || -f "/data/v2ray.crt" ]]; then
-        echo "Tệp chứng chỉ SSL đã tồn tại"
+        echo "证书文件已存在"
     elif [[ -f "$HOME/.acme.sh/${domain}_ecc/${domain}.key" && -f "$HOME/.acme.sh/${domain}_ecc/${domain}.cer" ]]; then
-        echo "Tệp chứng chỉ SSL đã tồn tại"
+        echo "证书文件已存在"
         "$HOME"/.acme.sh/acme.sh --installcert -d "${domain}" --fullchainpath /data/v2ray.crt --keypath /data/v2ray.key --ecc
-        judge "Cấp chứng chỉ SSL mới"
+        judge "证书应用"
     else
         ssl_install
         acme
@@ -841,40 +849,40 @@ EOF
 
 tls_type() {
     if [[ -f "/etc/nginx/sbin/nginx" ]] && [[ -f "$nginx_conf" ]] && [[ "$shell_mode" == "ws" ]]; then
-        echo "Vui lòng chọn phiên bản TLS được hỗ trợ（default:3）:"
-        echo "Xin lưu ý rằng nếu bạn sử dụng Quantaumlt X sẽ Shadowrocket / với phiên bản thấp hơn V2ray core 4.18.1 vui lòng chọn phần mềm tương thích"
-        echo "1: TLS1.1 TLS1.2 and TLS1.3 (chế độ tương thích)"
-        echo "2: TLS1.2 and TLS1.3 (chế độ tương thích)"
+        echo "请选择支持的 TLS 版本（default:3）:"
+        echo "请注意,如果你使用 Quantaumlt X / 路由器 / 旧版 Shadowrocket / 低于 4.18.1 版本的 V2ray core 请选择 兼容模式"
+        echo "1: TLS1.1 TLS1.2 and TLS1.3（兼容模式）"
+        echo "2: TLS1.2 and TLS1.3 (兼容模式)"
         echo "3: TLS1.3 only"
-        read -rp "Vui lòng nhập：" tls_version
+        read -rp "请输入：" tls_version
         [[ -z ${tls_version} ]] && tls_version=3
         if [[ $tls_version == 3 ]]; then
             sed -i 's/ssl_protocols.*/ssl_protocols         TLSv1.3;/' $nginx_conf
-            echo -e "${OK} ${GreenBG} Chuyển sang TLS1.3 only ${Font}"
+            echo -e "${OK} ${GreenBG} 已切换至 TLS1.3 only ${Font}"
         elif [[ $tls_version == 1 ]]; then
             sed -i 's/ssl_protocols.*/ssl_protocols         TLSv1.1 TLSv1.2 TLSv1.3;/' $nginx_conf
-            echo -e "${OK} ${GreenBG} Chuyển sang TLS1.1 TLS1.2 and TLS1.3 ${Font}"
+            echo -e "${OK} ${GreenBG} 已切换至 TLS1.1 TLS1.2 and TLS1.3 ${Font}"
         else
             sed -i 's/ssl_protocols.*/ssl_protocols         TLSv1.2 TLSv1.3;/' $nginx_conf
-            echo -e "${OK} ${GreenBG} Chuyển sang TLS1.2 and TLS1.3 ${Font}"
+            echo -e "${OK} ${GreenBG} 已切换至 TLS1.2 and TLS1.3 ${Font}"
         fi
         systemctl restart nginx
         judge "Nginx 重启"
     else
-        echo -e "${Error} ${RedBG} Nginx Hoặc file cấu hình không tồn tại hoặc phiên bản đang cài là h2, vui lòng cài đặt đúng script và thực thi ${Font}"
+        echo -e "${Error} ${RedBG} Nginx 或 配置文件不存在 或当前安装版本为 h2 ，请正确安装脚本后执行${Font}"
     fi
 }
 
 show_access_log() {
-    [ -f ${v2ray_access_log} ] && tail -f ${v2ray_access_log} || echo -e "${RedBG}Tập tin nhật ký không tồn tại${Font}"
+    [ -f ${v2ray_access_log} ] && tail -f ${v2ray_access_log} || echo -e "${RedBG}log文件不存在${Font}"
 }
 
 show_error_log() {
-    [ -f ${v2ray_error_log} ] && tail -f ${v2ray_error_log} || echo -e "${RedBG}Tập tin nhật ký không tồn tại${Font}"
+    [ -f ${v2ray_error_log} ] && tail -f ${v2ray_error_log} || echo -e "${RedBG}log文件不存在${Font}"
 }
 
 ssl_update_manuel() {
-    [ -f ${amce_sh_file} ] && "/root/.acme.sh"/acme.sh --cron --home "/root/.acme.sh" || echo -e "${RedBG}Công cụ cấp chứng chỉ không tồn tại. Vui lòng xác nhận xem bạn có đang sử dụng chứng chỉ của riêng mình hay không.${Font}"
+    [ -f ${amce_sh_file} ] && "/root/.acme.sh"/acme.sh --cron --home "/root/.acme.sh" || echo -e "${RedBG}证书签发工具不存在，请确认你是否使用了自己的证书${Font}"
     domain="$(info_extraction '\"add\"')"
     "$HOME"/.acme.sh/acme.sh --installcert -d "${domain}" --fullchainpath /data/v2ray.crt --keypath /data/v2ray.key --ecc
 }
@@ -885,7 +893,7 @@ bbr_boost_sh() {
 }
 
 mtproxy_sh() {
-    echo -e "${Error} ${RedBG} Bảo trì chức năng, tạm thời không khả dụng ${Font}"
+    echo -e "${Error} ${RedBG} 功能维护，暂不可用 ${Font}"
 }
 
 uninstall_all() {
@@ -895,13 +903,13 @@ uninstall_all() {
     [[ -f $v2ctl_bin_dir ]] && rm -f $v2ctl_bin_dir
     [[ -d $v2ray_bin_dir_old ]] && rm -rf $v2ray_bin_dir_old
     if [[ -d $nginx_dir ]]; then
-        echo -e "${OK} ${Green} Bạn có muốn gỡ cài đặt Nginx [Y/N]? ${Font}"
+        echo -e "${OK} ${Green} 是否卸载 Nginx [Y/N]? ${Font}"
         read -r uninstall_nginx
         case $uninstall_nginx in
         [yY][eE][sS] | [yY])
             rm -rf $nginx_dir
             rm -rf $nginx_systemd_file
-            echo -e "${OK} ${Green} Đã gỡ cài đặt Nginx ${Font}"
+            echo -e "${OK} ${Green} 已卸载 Nginx ${Font}"
             ;;
         *) ;;
 
@@ -909,7 +917,7 @@ uninstall_all() {
     fi
     [[ -d $v2ray_conf_dir ]] && rm -rf $v2ray_conf_dir
     [[ -d $web_dir ]] && rm -rf $web_dir
-    echo -e "${OK} ${Green} Có nên gỡ cài đặt acme.sh và chứng chỉ hay không [Y/N]? ${Font}"
+    echo -e "${OK} ${Green} 是否卸载acme.sh及证书 [Y/N]? ${Font}"
     read -r uninstall_acme
     case $uninstall_acme in
     [yY][eE][sS] | [yY])
@@ -920,12 +928,12 @@ uninstall_all() {
     *) ;;
     esac
     systemctl daemon-reload
-    echo -e "${OK} ${GreenBG} Đã gỡ cài đặt ${Font}"
+    echo -e "${OK} ${GreenBG} 已卸载 ${Font}"
 }
 delete_tls_key_and_crt() {
     [[ -f $HOME/.acme.sh/acme.sh ]] && /root/.acme.sh/acme.sh uninstall >/dev/null 2>&1
     [[ -d $HOME/.acme.sh ]] && rm -rf "$HOME/.acme.sh"
-    echo -e "${OK} ${GreenBG} Đã xóa các tệp chứng chỉ cũ ${Font}"
+    echo -e "${OK} ${GreenBG} 已清空证书遗留文件 ${Font}"
 }
 judge_mode() {
     if [ -f $v2ray_bin_dir ] || [ -f $v2ray_bin_dir_old/v2ray ]; then
@@ -992,24 +1000,24 @@ update_sh() {
     echo "$ol_version" >$version_cmp
     echo "$shell_version" >>$version_cmp
     if [[ "$shell_version" < "$(sort -rV $version_cmp | head -1)" ]]; then
-        echo -e "${OK} ${GreenBG} Có phiên bản mới rồi, cập nhật hay không [Y/N]? ${Font}"
+        echo -e "${OK} ${GreenBG} 存在新版本，是否更新 [Y/N]? ${Font}"
         read -r update_confirm
         case $update_confirm in
         [yY][eE][sS] | [yY])
             wget -N --no-check-certificate https://raw.githubusercontent.com/wulabing/V2Ray_ws-tls_bash_onekey/${github_branch}/install.sh
-            echo -e "${OK} ${GreenBG} Hoàn thành cập nhật ${Font}"
+            echo -e "${OK} ${GreenBG} 更新完成 ${Font}"
             exit 0
             ;;
         *) ;;
 
         esac
     else
-        echo -e "${OK} ${GreenBG} Phiên bản hiện tại là phiên bản mới nhất ${Font}"
+        echo -e "${OK} ${GreenBG} 当前版本为最新版本 ${Font}"
     fi
 
 }
 maintain() {
-    echo -e "${RedBG}Tùy chọn này tạm thời không khả dụng${Font}"
+    echo -e "${RedBG}该选项暂时无法使用${Font}"
     echo -e "${RedBG}$1${Font}"
     exit 0
 }
@@ -1041,35 +1049,35 @@ modify_camouflage_path() {
 
 menu() {
     update_sh
-    echo -e "\t Cài đặt V2ray ${Red}[${shell_version}]${Font}"
-    echo -e "\t---Tác giả Wulabing việt hoá cấu hình lại Nguyễn Thái---"
-    echo -e "\thttps://github.com/nqthaivl/V2Ray-install\n"
-    echo -e "Phiên bản hiện đang được cài đặt:${shell_mode}\n"
+    echo -e "\t V2ray 安装管理脚本 ${Red}[${shell_version}]${Font}"
+    echo -e "\t---authored by wulabing---"
+    echo -e "\thttps://github.com/wulabing\n"
+    echo -e "当前已安装版本:${shell_mode}\n"
 
-    echo -e "—————————————— Hướng dẫn cài đặt ——————————————"""
-    echo -e "${Green}0.${Font}  Cấu hình cài đặt"
-    echo -e "${Green}1.${Font}  Cài đặt V2Ray (Nginx+ws+tls)"
-    echo -e "${Green}2.${Font}  Cài đặt V2Ray (http/2)"
-    echo -e "${Green}3.${Font}  Nâng cấp V2Ray core"
-    echo -e "—————————————— Thay đổi cấu hình ——————————————"
-    echo -e "${Green}4.${Font}  Thay đổi UUID"
-    echo -e "${Green}6.${Font}  Thay đổi port"
-    echo -e "${Green}7.${Font}  Thay đổi TLS"
-    echo -e "${Green}18.${Font}  Thay đổi đường ngụy trang"
-    echo -e "—————————————— Xem thông tin ——————————————"
-    echo -e "${Green}8.${Font}  Xem nhật ký truy cập thời gian thực"
-    echo -e "${Green}9.${Font}  Xem nhật ký lỗi thời gian thực"
-    echo -e "${Green}10.${Font} Xem thông tin cấu hình V2Ray"
-    echo -e "—————————————— Lự lựa chọn khác ——————————————"
-    echo -e "${Green}11.${Font} Cài đặt Sript tự động"
-    echo -e "${Green}12.${Font} Cài đặt MTproxy"
-    echo -e "${Green}13.${Font} Cập nhật chứng chỉ SSL"
-    echo -e "${Green}14.${Font} Gỡ cài đặt V2Ray"
-    echo -e "${Green}15.${Font} Cập nhật chứng chỉ tác vụ theo lịch trình crontab"
-    echo -e "${Green}16.${Font} Xóa các tập tin cũ của chứng chỉ"
-    echo -e "${Green}17.${Font} Thoát \n"
+    echo -e "—————————————— 安装向导 ——————————————"""
+    echo -e "${Green}0.${Font}  升级 脚本"
+    echo -e "${Green}1.${Font}  安装 V2Ray (Nginx+ws+tls)"
+    echo -e "${Green}2.${Font}  安装 V2Ray (http/2)"
+    echo -e "${Green}3.${Font}  升级 V2Ray core"
+    echo -e "—————————————— 配置变更 ——————————————"
+    echo -e "${Green}4.${Font}  变更 UUID"
+    echo -e "${Green}6.${Font}  变更 port"
+    echo -e "${Green}7.${Font}  变更 TLS 版本(仅ws+tls有效)"
+    echo -e "${Green}18.${Font}  变更伪装路径"
+    echo -e "—————————————— 查看信息 ——————————————"
+    echo -e "${Green}8.${Font}  查看 实时访问日志"
+    echo -e "${Green}9.${Font}  查看 实时错误日志"
+    echo -e "${Green}10.${Font} 查看 V2Ray 配置信息"
+    echo -e "—————————————— 其他选项 ——————————————"
+    echo -e "${Green}11.${Font} 安装 4合1 bbr 锐速安装脚本"
+    echo -e "${Green}12.${Font} 安装 MTproxy(支持TLS混淆)"
+    echo -e "${Green}13.${Font} 证书 有效期更新"
+    echo -e "${Green}14.${Font} 卸载 V2Ray"
+    echo -e "${Green}15.${Font} 更新 证书crontab计划任务"
+    echo -e "${Green}16.${Font} 清空 证书遗留文件"
+    echo -e "${Green}17.${Font} 退出 \n"
 
-    read -rp "Vui lòng nhập số：" menu_num
+    read -rp "请输入数字：" menu_num
     case $menu_num in
     0)
         update_sh
@@ -1091,7 +1099,7 @@ menu() {
         start_process_systemd
         ;;
     6)
-        read -rp "Vui lòng nhập cổng kết nối:" port
+        read -rp "请输入连接端口:" port
         if grep -q "ws" $v2ray_qr_config_file; then
             modify_nginx_port
         elif grep -q "h2" $v2ray_qr_config_file; then
@@ -1142,12 +1150,12 @@ menu() {
         exit 0
         ;;
     18)
-        read -rp "Vui lòng nhập đường dẫn ngụy trang (lưu ý! Không cần gạch chéo) eg:ray):" camouflage_path
+        read -rp "请输入伪装路径(注意！不需要加斜杠 eg:ray):" camouflage_path
         modify_camouflage_path
         start_process_systemd
         ;;
     *)
-        echo -e "${RedBG}Vui lòng nhập đúng số${Font}"
+        echo -e "${RedBG}请输入正确的数字${Font}"
         ;;
     esac
 }
