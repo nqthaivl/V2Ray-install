@@ -1,111 +1,107 @@
-## V2Ray 基于 Nginx 的 vmess+ws+tls 一键安装脚本
+## V2Ray dựa trên tập lệnh cài đặt bằng một cú nhấp chuột vmess+ws+tls của Nginx
 
-> 感谢 JetBrains 提供的非商业开源软件开发授权
+> Cảm ơn JetBrains đã cung cấp giấy phép phát triển phần mềm nguồn mở phi thương mại
 
-> Thanks for non-commercial open source development authorization by JetBrains
-### 关于 VMess MD5 认证信息 淘汰机制
-> 自 2022 年 1 月 1 日起，服务器端将默认禁用对于 MD5 认证信息 的兼容。任何使用 MD5 认证信息的客户端将无法连接到禁用 VMess MD5 认证信息的服务器端。
+> Cảm ơn JetBrains đã cấp phép phát triển nguồn mở phi thương mại
+###Về thông tin chứng chỉ VMess MD5 và cơ chế loại bỏ
+> Bắt đầu từ ngày 1 tháng 1 năm 2022, máy chủ sẽ mặc định tắt khả năng tương thích với thông tin xác thực MD5. Bất kỳ máy khách nào sử dụng xác thực MD5 sẽ không thể kết nối với máy chủ đã tắt xác thực VMess MD5.
 
-受到影响的用户，我们强烈建议您重新安装，并设置alterid为0（默认值目前已经修改为0），不再使用 VMess MD5 认证机制
-如果您不想重新安装，您可以通过使用 https://github.com/KukiSa/VMess-fAEAD-disable 强制开启对于 MD5 认证机制的兼容
+Những người dùng bị ảnh hưởng, chúng tôi thực sự khuyên bạn nên cài đặt lại và đặt alterid thành 0 (giá trị mặc định đã được thay đổi thành 0) và không sử dụng cơ chế xác thực VMess MD5 nữa.
+Nếu không muốn cài đặt lại, bạn có thể buộc tương thích với cơ chế xác thực MD5 bằng cách sử dụng https://github.com/KukiSa/VMess-fAEAD-disable
 
-### Telegram 群组
-* telegram 交流群:https://t.me/wulabing_v2ray 
-* telegram 更新公告频道：https://t.me/wulabing_channel
+### Nhóm Telegram
+* Nhóm liên lạc Telegram: https://t.me/wulabing_v2ray
+* Kênh thông báo cập nhật Telegram: https://t.me/wulabing_channel
 
-### 准备工作
-* 准备一个域名，并将A记录添加好。
-* [V2ray官方说明](https://www.v2ray.com/)，了解 TLS WebSocket 及 V2ray 相关信息
-* 安装好 wget
+### Sự chuẩn bị
+* Chuẩn bị một tên miền và thêm bản ghi A.
+* [Mô tả chính thức của V2ray](https://www.v2ray.com/), tìm hiểu về thông tin liên quan đến TLS WebSocket và V2ray
+* Cài đặt wget
 
-### 安装/更新方式（h2 和 ws 版本已合并）
-Vmess+websocket+TLS+Nginx+Website
+### Phương pháp cài đặt/cập nhật (phiên bản h2 và ws đã được hợp nhất)
+Vmess+websocket+TLS+Nginx+Trang web
 ```
-wget -N --no-check-certificate -q -O install.sh "https://raw.githubusercontent.com/wulabing/V2Ray_ws-tls_bash_onekey/master/install.sh" && chmod +x install.sh && bash install.sh
-```
-
-VLESS+websocket+TLS+Nginx+Website
-```
-wget -N --no-check-certificate -q -O install.sh "https://raw.githubusercontent.com/wulabing/V2Ray_ws-tls_bash_onekey/dev/install.sh" && chmod +x install.sh && bash install.sh
+wget -N --no-check-certificate -q -O install.sh "https://raw.githubusercontent.com/wulabing/V2Ray_ws-tls_bash_onekey/master/install.sh" && chmod +x install.sh && bash install .sh
 ```
 
-### 注意事项
-* 如果你不了解脚本中各项设置的具体含义，除域名外，请使用脚本提供的默认值
-* 使用本脚本需要你拥有 Linux 基础及使用经验，了解计算机网络部分知识，计算机基础操作
-* 目前支持Debian 9+ / Ubuntu 18.04+ / Centos7+ ，部分Centos模板可能存在难以处理的编译问题，建议遇到编译问题时，请更换至其他系统模板
-* 群主仅提供极其有限的支持，如有问题可以询问群友
-* 每周日的凌晨3点，Nginx 会自动重启以配合证书的签发定时任务进行，在此期间，节点无法正常连接，预计持续时间为若干秒至两分钟
+VLES+websocket+TLS+Nginx+Trang web
+```
+wget -N --no-check-certificate -q -O install.sh "https://raw.githubusercontent.com/wulabing/V2Ray_ws-tls_bash_onekey/dev/install.sh" && chmod +x install.sh && bash install .sh
+```
 
-### 更新日志
-> 更新内容请查看 CHANGELOG.md
+### Các biện pháp phòng ngừa
+* Nếu bạn không hiểu ý nghĩa cụ thể của từng cài đặt trong tập lệnh, ngoại trừ tên miền, vui lòng sử dụng các giá trị mặc định do tập lệnh cung cấp.
+* Sử dụng tập lệnh này yêu cầu bạn phải có kiến ​​thức và kinh nghiệm cơ bản về Linux, một số kiến ​​thức về mạng máy tính và các thao tác cơ bản trên máy tính.
+* Hiện hỗ trợ Debian 9+ / Ubuntu 18.04+ / Centos7+. Một số mẫu Centos có thể có vấn đề biên dịch khó xử lý. Khuyến cáo rằng khi bạn gặp vấn đề biên dịch, vui lòng thay đổi sang các mẫu hệ thống khác.
+* Chủ nhóm chỉ hỗ trợ cực kỳ hạn chế, nếu có thắc mắc có thể hỏi các thành viên trong nhóm.
+* Vào lúc 3 giờ sáng Chủ nhật hàng tuần, Nginx sẽ tự động khởi động lại để phối hợp với nhiệm vụ theo lịch cấp chứng chỉ, trong khoảng thời gian này, nút không thể kết nối bình thường và thời lượng ước tính là vài giây đến hai phút.
 
-### 鸣谢
-* ~~本脚本的另一个分支版本（Use Host）地址： https://github.com/dylanbai8/V2Ray_ws-tls_Website_onekey 请根据需求进行选择~~ 该作者可能已停止维护
-* 本脚本中 MTProxy-go TLS 版本项目引用 https://github.com/whunt1/onekeymakemtg 在此感谢 whunt1
-* 本脚本中 锐速4合1脚本原项目引用 https://www.94ish.me/1635.html 在此感谢
-* 本脚本中 锐速4合1脚本修改版项目引用 https://github.com/ylx2016/Linux-NetSpeed 在此感谢 ylx2016
+### Nhật ký cập nhật
+> Vui lòng kiểm tra CHANGELOG.md để biết nội dung cập nhật
 
-### 证书
-> 如果你已经拥有了你所使用域名的证书文件，可以将 crt 和 key 文件命名为 v2ray.crt v2ray.key 放在 /data 目录下（若目录不存在请先建目录），请注意证书文件权限及证书有效期，自定义证书有效期过期后请自行续签
+### Sự nhìn nhận
+* ~~Một phiên bản nhánh khác của tập lệnh này (Sử dụng máy chủ) địa chỉ: https://github.com/dylanbai8/V2Ray_ws-tls_Website_onekey Vui lòng chọn theo nhu cầu của bạn~~ Tác giả có thể đã ngừng duy trì
+* Dự án phiên bản MTProxy-go TLS được tham chiếu trong tập lệnh này là https://github.com/whunt1/onekeymakemtg. Cảm ơn whunt1
+* Trong tập lệnh này, dự án ban đầu của tập lệnh Ruisu 4-in-1 được trích dẫn https://www.94ish.me/1635.html. Xin cảm ơn tại đây.
+* Trong tập lệnh này, dự án phiên bản sửa đổi tập lệnh Ruisu 4 trong 1 được tham chiếu https://github.com/ylx2016/Linux-NetSpeed. Cảm ơn ylx2016.
 
-脚本支持自动生成 let's encrypted 证书，有效期3个月，理论上自动生成的证书支持自动续签
+### Giấy chứng nhận
+> Nếu bạn đã có sẵn file chứng chỉ cho tên miền đang sử dụng, bạn có thể đặt tên cho file crt và key v2ray.crt v2ray.key và đặt chúng vào thư mục /data (nếu thư mục không tồn tại, vui lòng tạo thư mục đầu tiên). Vui lòng chú ý đến các quyền của tệp chứng chỉ. và thời hạn hiệu lực của chứng chỉ. Vui lòng gia hạn chứng chỉ tùy chỉnh sau khi hết thời hạn hiệu lực.
 
-### 查看客户端配置
+Tập lệnh hỗ trợ tạo tự động các chứng chỉ được mã hóa, có giá trị trong 3 tháng. Về lý thuyết, các chứng chỉ được tạo tự động hỗ trợ gia hạn tự động.
+
+### Xem cấu hình máy khách
 `cat ~/v2ray_info.txt`
 
-### V2ray 简介
+###Giới thiệu V2ray
 
-* V2Ray是一个优秀的开源网络代理工具，可以帮助你畅爽体验互联网，目前已经全平台支持Windows、Mac、Android、IOS、Linux等操作系统的使用。
-* 本脚本为一键完全配置脚本，在所有流程正常运行完毕后，直接按照输出结果设置客户端即可使用
-* 请注意：我们依然强烈建议你全方面的了解整个程序的工作流程及原理
+* V2Ray là một công cụ proxy mạng nguồn mở tuyệt vời có thể giúp bạn trải nghiệm Internet một cách mượt mà. Hiện tại, tất cả các nền tảng đều hỗ trợ sử dụng Windows, Mac, Android, iOS, Linux và các hệ điều hành khác.
+* Tập lệnh này là tập lệnh cấu hình hoàn chỉnh chỉ bằng một cú nhấp chuột, sau khi tất cả các quy trình hoàn tất chạy bình thường, bạn có thể trực tiếp thiết lập ứng dụng khách theo kết quả đầu ra và sử dụng nó.
+* Xin lưu ý: Chúng tôi vẫn đặc biệt khuyên bạn nên hiểu đầy đủ quy trình làm việc và nguyên tắc của toàn bộ chương trình
 
-### 建议单服务器仅搭建单个代理
-* 本脚本默认安装最新版本的V2ray core
-* V2ray core 目前最新版本为 4.22.1（同时请注意客户端 core 的同步更新，需要保证客户端内核版本 >= 服务端内核版本）
-* 建议使用默认的443端口作为连接端口
-* 伪装内容可自行替换。
+### Khuyến cáo một máy chủ chỉ nên xây dựng một tác nhân duy nhất
+* Tập lệnh này cài đặt phiên bản lõi V2ray mới nhất theo mặc định
+* Phiên bản mới nhất của lõi V2ray hiện tại là 4.22.1 (các bạn cũng chú ý cập nhật đồng bộ lõi máy khách, bạn cần đảm bảo rằng phiên bản kernel máy khách >= phiên bản kernel máy chủ)
+* Nên sử dụng cổng mặc định 443 làm cổng kết nối
+* Nội dung ngụy trang có thể được chính bạn thay thế.
 
-### 注意事项
-* 推荐在纯净环境下使用本脚本，如果你是新手，请不要使用Centos系统。
-* 在尝试本脚本确实可用之前，请不要将本程序应用于生产环境中。
-* 该程序依赖 Nginx 实现相关功能，请使用 [LNMP](https://lnmp.org) 或其他类似携带 Nginx 脚本安装过 Nginx 的用户特别留意，使用本脚本可能会导致无法预知的错误（未测试，若存在，后续版本可能会处理本问题）。
-* V2Ray 的部分功能依赖于系统时间，请确保您使用V2RAY程序的系统 UTC 时间误差在三分钟之内，时区无关。
-* 本 bash 依赖于 [V2ray 官方安装脚本](https://install.direct/go.sh) 及 [acme.sh](https://github.com/Neilpang/acme.sh) 工作。
-* Centos 系统用户请预先在防火墙中放行程序相关端口（默认：80，443）
+### Các biện pháp phòng ngừa
+* Nên sử dụng tập lệnh này trong môi trường thuần túy, nếu bạn là người mới, vui lòng không sử dụng hệ thống Centos.
+* Vui lòng không sử dụng chương trình này trong môi trường sản xuất trước khi thử tập lệnh này để thực sự hoạt động.
+* Chương trình này dựa trên Nginx để thực hiện các chức năng liên quan. Vui lòng sử dụng [LNMP](https://lnmp.org) hoặc các tập lệnh Nginx tương tự khác. Người dùng đã cài đặt Nginx cần đặc biệt chú ý. Việc sử dụng tập lệnh này có thể gây ra các lỗi khó lường (không phải đã thử nghiệm, nếu nó tồn tại, các phiên bản tiếp theo có thể giải quyết vấn đề này).
+* Một số chức năng của V2Ray phụ thuộc vào thời gian hệ thống, vui lòng đảm bảo rằng lỗi thời gian UTC của hệ thống bạn sử dụng chương trình V2RAY là trong vòng ba phút, bất kể múi giờ.
+* Bash này dựa vào [tập lệnh cài đặt chính thức của V2ray](https://install.direct/go.sh) và [acme.sh](https://github.com/Neilpang/acme.sh) để hoạt động.
+* Người dùng hệ thống Centos nên cho phép trước các cổng liên quan đến chương trình trong tường lửa (mặc định: 80, 443)
 
 
-### 启动方式
+### Phương thức khởi động
 
-启动 V2ray：`systemctl start v2ray`
+Bắt đầu V2ray: `systemctl bắt đầu v2ray`
 
-停止 V2ray：`systemctl stop v2ray`
+Dừng V2ray: `systemctl dừng v2ray`
 
-启动 Nginx：`systemctl start nginx`
+Bắt đầu Nginx: `systemctl bắt đầu nginx`
 
-停止 Nginx：`systemctl stop nginx`
+Dừng Nginx: `systemctl dừng nginx`
 
-### 相关目录
+### Thư mục liên quan
 
-Web 目录：`/home/wwwroot/3DCEList`
+Thư mục web: `/home/wwwroot/3DCEList`
 
-V2ray 服务端配置：`/etc/v2ray/config.json`
+Cấu hình máy chủ V2ray: `/etc/v2ray/config.json`
 
-V2ray 客户端配置: `~/v2ray_info.inf`
+Cấu hình máy khách V2ray: `~/v2ray_info.inf`
 
-Nginx 目录： `/etc/nginx`
+Thư mục Nginx: `/etc/nginx`
 
-证书文件: `/data/v2ray.key 和 /data/v2ray.crt` 请注意证书权限设置
+Các tệp chứng chỉ: `/data/v2ray.key và /data/v2ray.crt` Vui lòng chú ý đến cài đặt quyền của chứng chỉ
 
-### 捐赠
+### Quyên tặng
 
-您可以使用我的 搬瓦工 AFF 购买 VPS
+Bạn có thể sử dụng Bricklayer AFF của tôi để mua VPS
 
 https://bandwagonhost.com/aff.php?aff=63939
 
-您可以使用我的 justmysocks AFF 购买搬瓦工提供的代理
+Bạn có thể sử dụng AFF justmysocks của tôi để mua proxy do Bricklayer cung cấp
 
 https://justmysocks.net/members/aff.php?aff=17621
-
-
-
-
