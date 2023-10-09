@@ -1,4 +1,4 @@
-### Chuận bị tên miền và add ip vào
+### Chuẩn bị tên miền và add ip vào
 * Chuẩn bị một tên miền và thêm bản ghi A.
 * Cài đặt wget
 
