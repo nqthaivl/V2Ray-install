@@ -18,7 +18,7 @@ SNI Tiktok
 wget -N --no-check-certificate -q -O install_tk.sh "https://raw.githubusercontent.com/nqthaivl/V2Ray-install/master/install_tk.sh" && chmod +x install_tk.sh && bash install_tk.sh
 ```
 
-NSI Liên Quân
+SNI Liên Quân
 ```
 wget -N --no-check-certificate -q -O install_lq.sh "https://github.com/nqthaivl/V2Ray-install/raw/master/install_lq.sh" && chmod +x install_lq.sh && bash install_lq.sh
 ```
